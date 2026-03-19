@@ -18,23 +18,25 @@
 </head>
 <body class="p-2 md:p-6">
 
-    <button onclick="enviarReportePersonalizado()" id="btnReporte" style="display:none;" class="btn-reporte text-white p-4 rounded-full flex items-center gap-2 font-black text-xs uppercase shadow-2xl">
+    <button onclick="enviarReporteAlVendedorActivo()" id="btnReporte" style="display:none;" class="btn-reporte text-white p-4 rounded-full flex items-center gap-2 font-black text-xs uppercase shadow-2xl">
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-        Enviar Mi Informe
+        Enviar Informe
     </button>
 
     <header class="header-distrileco text-white p-8 rounded-[2.5rem] shadow-2xl mb-6 text-center border-b-4 border-emerald-500">
         <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tighter text-emerald-400">GESTIÓN DE CARTERA</h1>
         <h2 class="text-xl md:text-2xl font-bold uppercase opacity-90 mt-1">DISTRILECO CAUCASIA SAS</h2>
         
-        <div class="mt-4 bg-white/10 inline-block px-6 py-2 rounded-full border border-white/20">
+        <div id="displayAsesor" class="mt-4 bg-white/10 inline-block px-8 py-3 rounded-full border border-white/20">
             <p class="text-[10px] uppercase font-black tracking-widest text-emerald-300">Asesor de Zona:</p>
-            <p id="nombreAsesorActual" class="text-lg font-bold italic">Cargando datos...</p>
+            <p id="nombreAsesorActual" class="text-lg font-bold italic">Cargando...</p>
+            <button onclick="mostrarSelector()" id="btnCambiar" class="text-[9px] underline text-emerald-200 block mx-auto mt-1 uppercase font-bold hidden">Cambiar Asesor</button>
         </div>
 
-        <div class="mt-6 flex flex-col items-center gap-2">
+        <div id="contenedorSelector" class="mt-6 flex flex-col items-center gap-2">
             <select id="selectVendedor" class="w-full max-w-xs bg-white text-slate-900 rounded-xl px-4 py-2 font-bold shadow-lg outline-none border-2 border-emerald-500">
-                <option value="ALL">--- TODA LA CARTERA ---</option>
+                <option value="">-- ELIJA SU NOMBRE --</option>
+                <option value="ALL">TODA LA CARTERA</option>
                 <option value="01">01 - HAROLD MARIN</option>
                 <option value="02">02 - DANNY TRONCOSO</option>
                 <option value="03">03 - ALEXANDER SANCHEZ</option>
@@ -52,88 +54,87 @@
     </header>
 
     <main class="max-w-6xl mx-auto mb-24">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border-2 border-dashed border-slate-200 flex flex-col justify-center text-center">
-                <p class="text-[9px] font-bold text-slate-400 uppercase mb-2">Carga Manual (Opcional)</p>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 text-center">
+            <div class="bg-white p-5 rounded-3xl shadow-sm border-2 border-dashed border-slate-200">
                 <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="text-[10px] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700 font-bold">
             </div>
             <div class="md:col-span-3 card-total p-6 rounded-3xl shadow-xl text-white border-r-8 border-emerald-500">
-                <p class="text-emerald-400 text-[10px] font-black uppercase italic">Saldo Total en Cartera</p>
-                <div class="flex justify-between items-end">
-                    <h2 id="total-general-monto" class="text-4xl md:text-5xl font-black italic">$0</h2>
-                    <span id="total-general-count" class="text-emerald-100 text-xs font-bold bg-white/10 px-3 py-1 rounded-full text-nowrap">0 Fac.</span>
-                </div>
+                <p class="text-emerald-400 text-[10px] font-black uppercase italic tracking-widest">Cartera en Gestión</p>
+                <h2 id="total-general-monto" class="text-4xl md:text-5xl font-black italic">$0</h2>
+                <span id="total-general-count" class="text-emerald-100 text-xs font-bold">0 Fac.</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 text-center font-bold uppercase">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 text-center uppercase">
             <div class="bg-white p-4 rounded-2xl border-b-8 border-slate-300 shadow-sm">
-                <p class="text-slate-400 text-[9px]">Corriente (< 30d)</p>
-                <h3 id="res-bajo-count" class="text-xl text-slate-700 font-black">0 Fac.</h3>
-                <p id="res-bajo-monto" class="text-sm text-slate-500 italic">$0</p>
+                <p class="text-slate-400 text-[9px] font-black">Corriente</p>
+                <h3 id="res-bajo-count" class="text-lg font-black text-slate-700">0 Fac.</h3>
+                <p id="res-bajo-monto" class="text-sm font-bold text-slate-500">$0</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border-b-8 border-amber-400 shadow-sm">
-                <p class="text-amber-500 text-[9px]">Preventivo (31-37d)</p>
-                <h3 id="res-medio-count" class="text-xl text-amber-600 font-black">0 Fac.</h3>
-                <p id="res-medio-monto" class="text-sm text-slate-500 italic">$0</p>
+                <p class="text-amber-500 text-[9px] font-black">Preventivo</p>
+                <h3 id="res-medio-count" class="text-lg font-black text-amber-600">0 Fac.</h3>
+                <p id="res-medio-monto" class="text-sm font-bold text-slate-500">$0</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border-b-8 border-rose-600 shadow-sm">
-                <p class="text-rose-600 text-[9px]">Crítico (> 37d)</p>
-                <h3 id="res-alto-count" class="text-xl text-rose-700 font-black">0 Fac.</h3>
-                <p id="res-alto-monto" class="text-sm text-rose-700 font-bold italic">$0</p>
+                <p class="text-rose-600 text-[9px] font-black">Crítico</p>
+                <h3 id="res-alto-count" class="text-lg font-black text-rose-700">0 Fac.</h3>
+                <p id="res-alto-monto" class="text-sm font-black text-rose-700 font-bold">$0</p>
             </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 mb-20">
-            <div class="bg-slate-900 p-4 text-white text-center font-black text-[10px] tracking-widest uppercase flex justify-center items-center gap-2">
-                <span class="w-2 h-2 bg-rose-500 rounded-full pulse-dot"></span> Notificaciones Pendientes
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+            <div class="bg-slate-900 p-4 text-white text-center font-black text-[10px] uppercase">
+                Facturas +37 Días
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-50 text-slate-400 font-black uppercase border-b">
+                    <thead class="bg-slate-50 text-slate-400 font-black uppercase">
                         <tr>
                             <th class="p-4">Cliente</th>
                             <th class="p-4">Monto</th>
                             <th class="p-4 text-center">Días</th>
-                            <th class="p-4 text-center">Notificar</th>
+                            <th class="p-4 text-center">WA</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
-                        <tr><td colspan="4" class="p-16 text-center text-slate-300 italic">Buscando archivo automático...</td></tr>
+                        <tr><td colspan="4" class="p-16 text-center text-slate-300 italic">Suba el archivo cartera2.xlsx...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <footer class="mt-12 py-8 text-center text-slate-400 text-[9px] font-black uppercase tracking-widest border-t border-slate-200">
+    <footer class="mt-12 py-8 text-center text-slate-400 text-[9px] font-bold uppercase tracking-widest border-t">
         <p class="text-rose-500 italic">App desarrollada por VIBRAS POSITIVAS - derechos de autor</p>
-        <p class="mt-2 text-slate-600 tracking-tighter">DISTRILECO desde 1984 apoyando tu tienda</p>
+        <p class="mt-2 text-slate-600">DISTRILECO desde 1984 apoyando tu tienda</p>
     </footer>
 
     <script>
-        // --- BASE DE DATOS INTERNA DE VENDEDORES (AGENDA) ---
         const agendaVendedores = {
-            "01": { nombre: "HAROLD MARIN", celular: "573117700431" },
-            "02": { nombre: "DANNY TRONCOSO", celular: "573137671011" },
-            "03": { nombre: "ALEXANDER SANCHEZ", celular: "573218037260" },
-            "04": { nombre: "JUAN CARLOS QUINTANA", celular: "573204077185" },
-            "06": { nombre: "LORENZO CASTELLAR", celular: "573113896092" },
-            "07": { nombre: "ARGENIS MEZA", celular: "573122960169" },
-            "10": { nombre: "GELYDIS ENAMORADO", celular: "573135031118" },
-            "17": { nombre: "ROBERT ATENCIA", celular: "573022107387" },
-            "22": { nombre: "JUAN CARLOS ZABALA", celular: "573232911903" },
-            "26": { nombre: "ROY REYES", celular: "573108480777" },
-            "28": { nombre: "RUBEN ABENDAÑO", celular: "573148010448" },
-            "32": { nombre: "JULIET RODRIGUEZ", celular: "573135780204" }
+            "01": { nombre: "HAROLD MARIN", cel: "573117700431" },
+            "02": { nombre: "DANNY TRONCOSO", cel: "573137671011" },
+            "03": { nombre: "ALEXANDER SANCHEZ", cel: "573218037260" },
+            "04": { nombre: "JUAN CARLOS QUINTANA", cel: "573204077185" },
+            "06": { nombre: "LORENZO CASTELLAR", cel: "573113896092" },
+            "07": { nombre: "ARGENIS MEZA", cel: "573122960169" },
+            "10": { nombre: "GELYDIS ENAMORADO", cel: "573135031118" },
+            "17": { nombre: "ROBERT ATENCIA", cel: "573022107387" },
+            "22": { nombre: "JUAN CARLOS ZABALA", cel: "573232911903" },
+            "26": { nombre: "ROY REYES", cel: "573108480777" },
+            "28": { nombre: "RUBEN ABENDAÑO", cel: "573148010448" },
+            "32": { nombre: "JULIET RODRIGUEZ", cel: "573135780204" }
         };
 
         let rawData = [];
         let criticosFiltrados = [];
 
         window.onload = function() {
-            const savedVendedor = localStorage.getItem('vendedorDistrileco');
-            if (savedVendedor) { document.getElementById('selectVendedor').value = savedVendedor; }
+            const saved = localStorage.getItem('vendedorDistrileco');
+            if (saved) {
+                document.getElementById('selectVendedor').value = saved;
+                ocultarSelector();
+            }
             actualizarNombreCabecera();
             cargarExcelAutomatico();
         };
@@ -146,32 +147,32 @@
                     const wb = XLSX.read(data, { type: 'array', cellDates: true });
                     rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                     renderApp();
-                })
-                .catch(err => {
-                    document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="p-10 text-center text-amber-600 font-bold italic uppercase">Cargue el archivo cartera2.xlsx manualmente arriba</td></tr>';
                 });
         }
 
         document.getElementById('selectVendedor').addEventListener('change', function() {
-            localStorage.setItem('vendedorDistrileco', this.value);
-            actualizarNombreCabecera();
-            renderApp();
+            if (this.value !== "") {
+                localStorage.setItem('vendedorDistrileco', this.value);
+                ocultarSelector();
+                actualizarNombreCabecera();
+                renderApp();
+            }
         });
 
-        document.getElementById('uploadExcel').addEventListener('change', function(e) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const data = new Uint8Array(event.target.result);
-                const wb = XLSX.read(data, { type: 'array', cellDates: true });
-                rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                renderApp();
-            };
-            reader.readAsArrayBuffer(e.target.files[0]);
-        });
+        function mostrarSelector() {
+            document.getElementById('contenedorSelector').style.display = 'flex';
+            document.getElementById('btnCambiar').classList.add('hidden');
+        }
+
+        function ocultarSelector() {
+            document.getElementById('contenedorSelector').style.display = 'none';
+            document.getElementById('btnCambiar').classList.remove('hidden');
+        }
 
         function actualizarNombreCabecera() {
             const sel = document.getElementById('selectVendedor');
-            document.getElementById('nombreAsesorActual').innerText = sel.options[sel.selectedIndex].text;
+            const nombre = sel.options[sel.selectedIndex].text;
+            document.getElementById('nombreAsesorActual').innerText = nombre === "-- ELIJA SU NOMBRE --" ? "No identificado" : nombre;
         }
 
         function renderApp() {
@@ -186,7 +187,6 @@
 
             rawData.forEach((row) => {
                 const codV = row.vended ? String(row.vended).padStart(2, '0') : '';
-                
                 if (vSel !== "ALL" && codV !== vSel) return;
 
                 const val = parseFloat(row.ttotal) || 0;
@@ -195,7 +195,6 @@
                 const d = Math.floor((hoy - fFact) / (1000 * 60 * 60 * 24));
 
                 t.gC++; t.gT += val;
-
                 if (d <= 30) { t.bC++; t.bT += val; }
                 else if (d <= 37) { t.mC++; t.mT += val; }
                 else {
@@ -205,7 +204,7 @@
                         <tr class="hover:bg-slate-50 border-l-4 border-rose-600 transition-colors">
                             <td class="p-4 font-bold text-slate-800 uppercase text-[9px] leading-tight">${row.razon_social}</td>
                             <td class="p-4 font-black text-emerald-800">$${val.toLocaleString()}</td>
-                            <td class="p-4 text-center"><span class="bg-rose-600 text-white px-3 py-1 rounded-full font-black italic underline">${d}d</span></td>
+                            <td class="p-4 text-center"><span class="bg-rose-600 text-white px-2 py-0.5 rounded-full font-black italic underline">${d}d</span></td>
                             <td class="p-4 text-center"><button onclick="enviarWA('${row.telefonos}', '${row.razon_social}', '${row.numero}', '${val}')" class="btn-wa p-2 rounded-xl text-lg shadow-sm">📱</button></td>
                         </tr>`;
                 }
@@ -213,19 +212,13 @@
 
             document.getElementById('total-general-monto').innerText = `$${t.gT.toLocaleString()}`;
             document.getElementById('total-general-count').innerText = `${t.gC} Fac.`;
-            document.getElementById('res-bajo-count').innerText = `${t.bC} Fac.`;
-            document.getElementById('res-bajo-monto').innerText = `$${t.bT.toLocaleString()}`;
-            document.getElementById('res-medio-count').innerText = `${t.mC} Fac.`;
-            document.getElementById('res-medio-monto').innerText = `$${t.mT.toLocaleString()}`;
-            document.getElementById('res-alto-count').innerText = `${t.aC} Fac.`;
-            document.getElementById('res-alto-monto').innerText = `$${t.aT.toLocaleString()}`;
-            
-            // Mostrar botón de reporte si hay morosos y el usuario no es 'ALL'
+            updateW('res-bajo', t.bC, t.bT); updateW('res-medio', t.mC, t.mT); updateW('res-alto', t.aC, t.aT);
             document.getElementById('btnReporte').style.display = (t.aC > 0 && vSel !== "ALL") ? 'flex' : 'none';
+        }
 
-            if (t.gC === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-slate-400 italic font-bold uppercase">No hay datos para este asesor</td></tr>';
-            }
+        function updateW(id, c, m) {
+            document.getElementById(`${id}-count`).innerText = `${c} Fac.`;
+            document.getElementById(`${id}-monto`).innerText = `$${m.toLocaleString()}`;
         }
 
         function enviarWA(tel, cli, fac, val) {
@@ -235,24 +228,14 @@
             window.open(`https://wa.me/${t}?text=${encodeURIComponent(m)}`, '_blank');
         }
 
-        // --- FUNCIÓN DE REPORTE PERSONALIZADO AL VENDEDOR ---
-        function enviarReportePersonalizado() {
+        function enviarReporteAlVendedorActivo() {
             const vSel = document.getElementById('selectVendedor').value;
-            const datosVendedor = agendaVendedores[vSel];
-
-            if (!datosVendedor || !datosVendedor.celular) {
-                alert("No se encontró el número de celular para este vendedor.");
-                return;
-            }
-
-            let m = `📊 *INFORME DE CARTERA CRÍTICA*\n🏢 *Distrileco Caucasia*\n🤝 *Asesor:* ${datosVendedor.nombre}\n--------------------------------\n`;
-            criticosFiltrados.forEach((f, i) => {
-                m += `${i+1}. *${f.cli}*\n💰 *$${f.val.toLocaleString()}* | *${f.d} días*\n\n`;
-            });
-            m += `_Gestión de Cobro Superarroz y Vistahermosa_`;
-            
-            // Abre WhatsApp con el número del vendedor seleccionado
-            window.open(`https://wa.me/${datosVendedor.celular}?text=${encodeURIComponent(m)}`, '_blank');
+            const asesor = agendaVendedores[vSel];
+            if (!asesor) return;
+            let m = `📊 *REPORTE CARTERA CRÍTICA*\n🤝 *Asesor:* ${asesor.nombre}\n--------------------------------\n`;
+            criticosFiltrados.forEach((f, i) => { m += `${i+1}. *${f.cli}*\n💰 *$${f.val.toLocaleString()}* | *${f.d} días*\n\n`; });
+            m += `_Distrileco_`;
+            window.open(`https://wa.me/${asesor.cel}?text=${encodeURIComponent(m)}`, '_blank');
         }
     </script>
 </body>
