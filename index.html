@@ -1,1 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distrileco - Control de Cartera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --distrileco-green: #2d6a4f;
+            --distrileco-gold: #d4af37;
+        }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header-bg { background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); }
+        .btn-whatsapp { background-color: #25D366; color: white; transition: 0.3s; }
+        .btn-whatsapp:hover { background-color: #128C7E; transform: scale(1.05); }
+    </style>
+</head>
+<body class="p-4">
 
+    <header class="header-bg text-white p-6 rounded-xl shadow-lg mb-8 text-center relative overflow-hidden">
+        <div class="relative z-10">
+            <h1 class="text-3xl font-bold tracking-wider">DISTRILECO CAUCASIA SAS</h1>
+            <p class="text-xl opacity-90 mt-1">DANNY TRONCOSO - ASESOR PARA LA ZONA</p>
+            <div class="mt-4 flex justify-center gap-4">
+                <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold italic">SUPERARROZ</span>
+                <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold italic">VISTAHERMOSA</span>
+            </div>
+        </div>
+        <div class="absolute -right-10 -bottom-10 opacity-10">
+            <svg width="200" height="200" fill="white" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6 flex flex-col items-center border-t-4 border-yellow-500">
+            <p class="mb-4 text-gray-600 text-center font-medium">Carga el archivo <strong>cartera2.xlsx</strong> para procesar los cobros</p>
+            <input type="file" id="uploadExcel" accept=".xlsx" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                <h2 class="font-bold text-gray-700">LISTADO DE COBROS (>37 DÍAS NEGOCIADOS)</h2>
+                <span id="counter" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">0 Clientes detectados</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+                        <tr>
+                            <th class="p-4 border-b">Razón Social (B)</th>
+                            <th class="p-4 border-b">Factura (D)</th>
+                            <th class="p-4 border-b">Valor (E)</th>
+                            <th class="p-4 border-b text-center">Días Negocio</th>
+                            <th class="p-4 border-b">Vencimiento (G)</th>
+                            <th class="p-4 border-b text-center">Notificar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="6" class="p-10 text-center text-gray-400">Sube el archivo Excel para empezar...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-6 text-center text-gray-500 text-sm border-t">
+        <p class="font-bold">DISTRILECO desde 1984 apoyando tu tienda</p>
+        <p>App desarrollada por <span class="text-pink-600">VIBRAS POSITIVAS</span> - Derechos de Autor © 2026</p>
+    </footer>
+
+    <script>
+        document.getElementById('uploadExcel').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Convertimos a JSON omitiendo la primera fila de encabezados
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: "A" });
+                processData(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function processData(rows) {
+            const tbody = document.getElementById('tableBody');
+            const counter = document.getElementById('counter');
+            tbody.innerHTML = '';
+            let count = 0;
+
+            // Empezamos desde el índice 1 para saltar el encabezado
+            rows.slice(1).forEach((row) => {
+                const razonSocial = row.B || 'N/A';
+                const facturaNum = row.D || 'N/A';
+                const valorTotal = row.E || 0;
+                const fechaFactura = new Date(row.F);
+                const fechaVencimiento = new Date(row.G);
+                const telefono = row.H || '';
+                const vendedor = row.I;
+
+                // 1. Filtrar Vendedor 12
+                if (vendedor == 12) return;
+
+                // 2. Calcular días de negociación
+                const diffTime = Math.abs(fechaVencimiento - fechaFactura);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                // 3. Filtro de los 37 días
+                if (diffDays > 37) {
+                    count++;
+                    const rowHtml = `
+                        <tr class="hover:bg-yellow-50 transition">
+                            <td class="p-4 font-bold text-gray-800">${razonSocial}</td>
+                            <td class="p-4 text-gray-600">#${facturaNum}</td>
+                            <td class="p-4 font-mono text-green-700">$${valorTotal.toLocaleString()}</td>
+                            <td class="p-4 text-center">
+                                <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">${diffDays} días</span>
+                            </td>
+                            <td class="p-4 text-gray-500 text-sm">${fechaVencimiento.toLocaleDateString()}</td>
+                            <td class="p-4 text-center">
+                                <button onclick="sendWhatsApp('${telefono}', '${razonSocial}', '${facturaNum}', '${valorTotal}')" 
+                                        class="btn-whatsapp px-4 py-2 rounded-lg text-sm font-bold shadow-md">
+                                    ENVIAR (SI)
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += rowHtml;
+                }
+            });
+
+            counter.innerText = `${count} Clientes detectados`;
+            if (count === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-10 text-center">No se encontraron facturas con más de 37 días (o son del Vendedor 12).</td></tr>';
+            }
+        }
+
+        function sendWhatsApp(tel, cliente, factura, total) {
+            // Limpiar teléfono por si tiene espacios o guiones
+            const cleanTel = tel.toString().replace(/\D/g, '');
+            const mensaje = `Hola *${cliente}*, te saludamos de *DISTRILECO*. Te recordamos que tu factura #${factura} por un valor de *$${total}* se encuentra pendiente de pago. ¡Gracias por tu confianza en Superarroz y Vistahermosa!`;
+            
+            const url = `https://wa.me/${cleanTel}?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
