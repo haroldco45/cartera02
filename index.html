@@ -3,95 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Distrileco - Dashboard de Cartera</title>
+    <title>Distrileco - Dashboard Movil</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { background-color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #f1f5f9; font-family: sans-serif; }
         .header-distrileco { background: linear-gradient(135deg, #064e3b 0%, #059669 100%); }
         .card-total { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); }
         .btn-wa { background-color: #25D366; color: white; transition: 0.3s; }
-        .btn-wa:hover { background-color: #128C7E; transform: scale(1.05); }
+        /* Botón flotante para el reporte general */
+        .btn-reporte { position: fixed; bottom: 20px; right: 20px; z-index: 50; background-color: #059669; }
     </style>
 </head>
-<body class="p-4">
+<body class="p-2 md:p-4">
 
-    <header class="header-distrileco text-white p-8 rounded-3xl shadow-xl mb-6 text-center">
-        <h1 class="text-4xl font-black tracking-tight uppercase">DISTRILECO CAUCASIA SAS</h1>
-        <p class="text-lg opacity-95 mt-1 font-medium italic">DANNY TRONCOSO - ASESOR PARA LA ZONA</p>
-        <div class="mt-4 flex justify-center gap-2">
-            <span class="bg-yellow-500 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase">Superarroz</span>
-            <span class="bg-white text-green-800 px-4 py-1 rounded-full text-[10px] font-black uppercase">Vistahermosa</span>
+    <button onclick="enviarReporteDanny()" id="btnReporte" style="display:none;" class="btn-reporte text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold animate-bounce border-2 border-white">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+        ENVIAR INFORME A DANNY
+    </button>
+
+    <header class="header-distrileco text-white p-6 rounded-3xl shadow-xl mb-4 text-center">
+        <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tighter">DISTRILECO CAUCASIA SAS</h1>
+        <p class="text-sm md:text-lg opacity-90 font-medium">DANNY TRONCOSO - ASESOR ZONA</p>
+        <div class="mt-2 flex justify-center gap-2">
+            <span class="bg-yellow-500 text-black px-3 py-0.5 rounded-full text-[9px] font-black">SUPERARROZ</span>
+            <span class="bg-white text-green-800 px-3 py-0.5 rounded-full text-[9px] font-black">VISTAHERMOSA</span>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto">
         
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-dashed border-emerald-200 flex flex-col justify-center">
-                <p class="text-[10px] text-emerald-600 font-black mb-2 uppercase text-center">Subir Cartera2.xlsx</p>
-                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="block w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-dashed border-emerald-200">
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="block w-full text-[10px] text-gray-400 file:mr-2 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700">
             </div>
-
-            <div class="lg:col-span-3 card-total p-6 rounded-2xl shadow-lg text-white flex flex-col justify-center">
-                <p class="text-blue-300 text-xs font-black uppercase tracking-widest">Gran Total Cartera General</p>
-                <div class="flex items-baseline gap-4">
-                    <h2 id="total-general-monto" class="text-5xl font-black italic">$0</h2>
-                    <span id="total-general-count" class="text-blue-200 font-medium text-lg">0 Facturas totales</span>
+            <div class="md:col-span-3 card-total p-4 rounded-2xl shadow-lg text-white">
+                <p class="text-blue-300 text-[10px] font-black uppercase">Gran Total Cartera</p>
+                <div class="flex justify-between items-end">
+                    <h2 id="total-general-monto" class="text-3xl font-black italic">$0</h2>
+                    <span id="total-general-count" class="text-blue-100 text-xs">0 Fac.</span>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center">
-            <div class="bg-white p-5 rounded-2xl border-b-8 border-blue-400 shadow-sm">
-                <p class="text-gray-400 text-[10px] font-black uppercase tracking-wider">Corriente (< 30 días)</p>
-                <h3 id="res-bajo-count" class="text-xl font-black text-blue-600">0 Facturas</h3>
-                <p id="res-bajo-monto" class="text-lg font-mono font-bold text-gray-700">$0</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <div class="bg-white p-4 rounded-xl border-b-4 border-blue-400 shadow-sm">
+                <p class="text-gray-400 text-[9px] font-black uppercase">Corriente</p>
+                <h3 id="res-bajo-count" class="text-lg font-black text-blue-600">0 Fac.</h3>
+                <p id="res-bajo-monto" class="text-md font-bold text-gray-700">$0</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border-b-8 border-yellow-400 shadow-sm">
-                <p class="text-gray-400 text-[10px] font-black uppercase tracking-wider">Preventivo (31 - 37 días)</p>
-                <h3 id="res-medio-count" class="text-xl font-black text-yellow-600">0 Facturas</h3>
-                <p id="res-medio-monto" class="text-lg font-mono font-bold text-gray-700">$0</p>
+            <div class="bg-white p-4 rounded-xl border-b-4 border-yellow-400 shadow-sm">
+                <p class="text-gray-400 text-[9px] font-black uppercase">Preventivo</p>
+                <h3 id="res-medio-count" class="text-lg font-black text-yellow-600">0 Fac.</h3>
+                <p id="res-medio-monto" class="text-md font-bold text-gray-700">$0</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border-b-8 border-red-500 shadow-sm">
-                <p class="text-gray-400 text-[10px] font-black uppercase tracking-wider">Crítico (> 37 días)</p>
-                <h3 id="res-alto-count" class="text-xl font-black text-red-600">0 Facturas</h3>
-                <p id="res-alto-monto" class="text-lg font-mono font-bold text-gray-700">$0</p>
+            <div class="bg-white p-4 rounded-xl border-b-4 border-red-500 shadow-sm">
+                <p class="text-gray-400 text-[9px] font-black uppercase tracking-widest text-red-500">Crítico (>37)</p>
+                <h3 id="res-alto-count" class="text-lg font-black text-red-600">0 Fac.</h3>
+                <p id="res-alto-monto" class="text-md font-bold text-gray-700">$0</p>
             </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-            <div class="bg-slate-800 p-5 text-white flex justify-between items-center">
-                <h2 class="font-black uppercase text-xs tracking-widest">Gestión de Cobro Crítico (> 37 días)</h2>
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-slate-800 p-4 text-white">
+                <h2 class="font-black uppercase text-[10px] tracking-widest text-center">Gestión Crítica de Cobro</h2>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] font-black">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-400 font-black uppercase">
                         <tr>
-                            <th class="p-5">Razón Social</th>
-                            <th class="p-5">N° Factura</th>
-                            <th class="p-5">Valor Total</th>
-                            <th class="p-5 text-center">Edad (Días)</th>
-                            <th class="p-5">Vencimiento</th>
-                            <th class="p-5 text-center">Acción</th>
+                            <th class="p-3">Cliente</th>
+                            <th class="p-3">Valor</th>
+                            <th class="p-3 text-center">Edad</th>
+                            <th class="p-3 text-center">Acción</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
-                        <tr>
-                            <td colspan="6" class="p-20 text-center text-gray-300 font-medium italic italic">Cargue el archivo cartera2.xlsx para visualizar la tabla...</td>
-                        </tr>
+                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="4" class="p-10 text-center text-gray-300 italic">Cargue Cartera2.xlsx...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <footer class="mt-16 py-8 text-center text-gray-400 text-[10px]">
-        <p class="font-black text-gray-600 uppercase italic">App desarrollada por VIBRAS POSITIVAS derechos de autor</p>
-        <p class="mt-1">DISTRILECO desde 1984 apoyando tu tienda © 2026</p>
+    <footer class="mt-10 py-6 text-center text-gray-400 text-[10px]">
+        <p class="font-black text-gray-600 uppercase italic">VIBRAS POSITIVAS derechos de autor</p>
+        <p class="mt-1 font-bold">DISTRILECO © 2026</p>
     </footer>
 
     <script>
+        let globalCritico = []; // Para el reporte a Danny
+
         document.getElementById('uploadExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const reader = new FileReader();
@@ -109,73 +111,72 @@
             const tbody = document.getElementById('tableBody');
             const hoy = new Date();
             tbody.innerHTML = '';
+            globalCritico = [];
 
-            let general = { count: 0, total: 0 };
-            let bajo = { count: 0, total: 0 };
-            let medio = { count: 0, total: 0 };
-            let alto = { count: 0, total: 0 };
+            let gen = { c: 0, t: 0 }, b = { c: 0, t: 0 }, m = { c: 0, t: 0 }, a = { c: 0, t: 0 };
 
             rows.forEach((row) => {
                 if (row.vended == "12") return; 
-
                 const valor = parseFloat(row.ttotal) || 0;
-                const fechaFactura = new Date(row.fecha);
-                const fechaVencimiento = new Date(row.vencimiento); // Columna G
-                if (isNaN(fechaFactura.getTime())) return;
+                const fechaF = new Date(row.fecha);
+                if (isNaN(fechaF.getTime())) return;
+                const d = Math.floor((hoy - fechaF) / (1000 * 60 * 60 * 24));
 
-                const diffDays = Math.floor((hoy - fechaFactura) / (1000 * 60 * 60 * 24));
-
-                general.count++;
-                general.total += valor;
-
-                if (diffDays <= 30) {
-                    bajo.count++; bajo.total += valor;
-                } else if (diffDays <= 37) {
-                    medio.count++; medio.total += valor;
-                } else {
-                    alto.count++; alto.total += valor;
+                gen.c++; gen.t += valor;
+                if (d <= 30) { b.c++; b.t += valor; }
+                else if (d <= 37) { m.c++; m.t += valor; }
+                else {
+                    a.c++; a.t += valor;
+                    globalCritico.push({ cliente: row.razon_social, factura: row.numero, valor: valor, dias: d });
                     
-                    const fVenc = isNaN(fechaVencimiento.getTime()) ? 'N/A' : fechaVencimiento.toLocaleDateString();
-
                     tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition border-l-4 border-red-600">
-                            <td class="p-5 font-bold text-slate-800 text-sm uppercase">${row.razon_social}</td>
-                            <td class="p-5 text-slate-400 font-mono text-[10px]">#${row.numero}</td>
-                            <td class="p-5 font-black text-emerald-700">$${valor.toLocaleString()}</td>
-                            <td class="p-5 text-center">
-                                <span class="bg-red-600 text-white px-3 py-1 rounded text-[10px] font-black italic underline">${diffDays} DÍAS</span>
-                            </td>
-                            <td class="p-5 text-slate-600 font-bold text-xs">${fVenc}</td>
-                            <td class="p-5 text-center">
-                                <button onclick="sendWhatsApp('${row.telefonos}', '${row.razon_social}', '${row.numero}', '${valor}', '${fVenc}')" 
-                                        class="btn-wa px-5 py-2 rounded-full text-[10px] font-black shadow-lg uppercase">
-                                    Notificar (SI)
-                                </button>
-                            </td>
+                        <tr class="hover:bg-red-50 border-l-4 border-red-600">
+                            <td class="p-3 font-bold text-slate-800 leading-tight uppercase text-[9px]">${row.razon_social.substring(0,25)}</td>
+                            <td class="p-3 font-black text-emerald-700">$${valor.toLocaleString()}</td>
+                            <td class="p-3 text-center"><span class="bg-red-600 text-white px-2 py-0.5 rounded text-[9px] font-black italic">${d}d</span></td>
+                            <td class="p-3 text-center"><button onclick="sendWA('${row.telefonos}', '${row.razon_social}', '${row.numero}', '${valor}')" class="btn-wa p-2 rounded-lg text-[9px]">📱</button></td>
                         </tr>`;
                 }
             });
 
-            document.getElementById('total-general-monto').innerText = `$${general.total.toLocaleString()}`;
-            document.getElementById('total-general-count').innerText = `${general.count} Facturas totales`;
-
-            updateCard('res-bajo', bajo);
-            updateCard('res-medio', medio);
-            updateCard('res-alto', alto);
-
-            if (alto.count === 0) tbody.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-400 uppercase text-xs">Sin registros que superen los 37 días</td></tr>';
+            document.getElementById('total-general-monto').innerText = `$${gen.t.toLocaleString()}`;
+            document.getElementById('total-general-count').innerText = `${gen.c} Fac.`;
+            updateC('res-bajo', b); updateC('res-medio', m); updateC('res-alto', a);
+            
+            if(a.c > 0) document.getElementById('btnReporte').style.display = 'flex';
         }
 
-        function updateCard(id, data) {
-            document.getElementById(`${id}-count`).innerText = `${data.count} Facturas`;
-            document.getElementById(`${id}-monto`).innerText = `$${data.total.toLocaleString()}`;
+        function updateC(id, d) {
+            document.getElementById(`${id}-count`).innerText = `${d.c} Fac.`;
+            document.getElementById(`${id}-monto`).innerText = `$${d.t.toLocaleString()}`;
         }
 
-        function sendWhatsApp(tel, cliente, factura, total, venc) {
-            let cleanTel = tel.toString().replace(/\D/g, '');
-            if (cleanTel.length === 10) cleanTel = '57' + cleanTel;
-            const msg = `Hola *${cliente}*, de *DISTRILECO*. Te recordamos que tu factura *${factura}* por *$${Number(total).toLocaleString()}* (Venció el ${venc}) ya superó los 37 días de emitida. Agradecemos tu gestión.`;
-            window.open(`https://wa.me/${cleanTel}?text=${encodeURIComponent(msg)}`, '_blank');
+        function sendWA(tel, cli, fac, val) {
+            let t = tel.toString().replace(/\D/g, '');
+            if (t.length === 10) t = '57' + t;
+            const msg = `Hola *${cli}*, DISTRILECO informa: Factura *${fac}* por *$${Number(val).toLocaleString()}* con +37 días. Gracias.`;
+            window.open(`https://wa.me/${t}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function enviarReporteDanny() {
+            let totalCritico = globalCritico.reduce((sum, item) => sum + item.valor, 0);
+            let msg = `📊 *INFORME CARTERA CRÍTICA - DISTRILECO*\n`;
+            msg += `👤 *Asesor:* Danny Troncoso\n`;
+            msg += `📅 *Fecha:* ${new Date().toLocaleDateString()}\n`;
+            msg += `--------------------------------\n`;
+            msg += `*RESUMEN TOTAL:* $${totalCritico.toLocaleString()}\n`;
+            msg += `*FACTURAS > 37 DÍAS:*\n\n`;
+
+            globalCritico.forEach((f, index) => {
+                msg += `${index + 1}. *${f.cliente}*\n`;
+                msg += `   Fac: ${f.factura} | $${f.valor.toLocaleString()} | *${f.dias} Días*\n\n`;
+            });
+
+            msg += `--------------------------------\n`;
+            msg += `App por *Vibras Positivas*`;
+            
+            const url = `https://wa.me/573137671011?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
         }
     </script>
 </body>
