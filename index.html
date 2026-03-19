@@ -20,7 +20,7 @@
 
     <button onclick="enviarReporteVendedor()" id="btnReporte" style="display:none;" class="btn-reporte text-white p-4 rounded-full flex items-center gap-2 font-black text-xs uppercase">
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-        Enviar Informe WhatsApp
+        Enviar Informe a Danny
     </button>
 
     <header class="header-distrileco text-white p-8 rounded-[2.5rem] shadow-2xl mb-6 text-center border-b-4 border-emerald-500">
@@ -29,7 +29,7 @@
         
         <div class="mt-4 bg-white/10 inline-block px-6 py-2 rounded-full border border-white/20">
             <p class="text-[10px] uppercase font-black tracking-widest text-emerald-300">Asesor de Zona:</p>
-            <p id="nombreAsesorActual" class="text-lg font-bold italic">Cargando...</p>
+            <p id="nombreAsesorActual" class="text-lg font-bold italic">Cargando datos...</p>
         </div>
 
         <div class="mt-6 flex flex-col items-center gap-2">
@@ -59,8 +59,8 @@
             <div class="md:col-span-3 card-total p-6 rounded-3xl shadow-xl text-white border-r-8 border-emerald-500">
                 <p class="text-emerald-400 text-[10px] font-black uppercase italic">Saldo Total en Cartera</p>
                 <div class="flex justify-between items-end">
-                    <h2 id="total-general-monto" class="text-4xl md:text-5xl font-black italic">$0</h2>
-                    <span id="total-general-count" class="text-emerald-100 text-xs font-bold bg-white/10 px-3 py-1 rounded-full">0 Fac.</span>
+                    <h2 id="total-general-monto" class="text-4xl md:text-5xl font-black italic leading-none">$0</h2>
+                    <span id="total-general-count" class="text-emerald-100 text-xs font-bold bg-white/10 px-3 py-1 rounded-full text-nowrap">0 Fac.</span>
                 </div>
             </div>
         </div>
@@ -69,17 +69,17 @@
             <div class="bg-white p-4 rounded-2xl border-b-8 border-slate-300 shadow-sm">
                 <p class="text-slate-400 text-[9px]">Corriente (< 30d)</p>
                 <h3 id="res-bajo-count" class="text-xl text-slate-700 font-black">0 Fac.</h3>
-                <p id="res-bajo-monto" class="text-sm text-slate-500">$0</p>
+                <p id="res-bajo-monto" class="text-sm text-slate-500 italic">$0</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border-b-8 border-amber-400 shadow-sm">
                 <p class="text-amber-500 text-[9px]">Preventivo (31-37d)</p>
                 <h3 id="res-medio-count" class="text-xl text-amber-600 font-black">0 Fac.</h3>
-                <p id="res-medio-monto" class="text-sm text-slate-500">$0</p>
+                <p id="res-medio-monto" class="text-sm text-slate-500 italic">$0</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border-b-8 border-rose-600 shadow-sm">
                 <p class="text-rose-600 text-[9px]">Crítico (> 37d)</p>
                 <h3 id="res-alto-count" class="text-xl text-rose-700 font-black">0 Fac.</h3>
-                <p id="res-alto-monto" class="text-sm text-slate-500 font-bold">$0</p>
+                <p id="res-alto-monto" class="text-sm text-rose-700 font-bold italic">$0</p>
             </div>
         </div>
 
@@ -94,16 +94,21 @@
                             <th class="p-4">Cliente</th>
                             <th class="p-4">Monto</th>
                             <th class="p-4 text-center">Días</th>
-                            <th class="p-4 text-center">Acción</th>
+                            <th class="p-4 text-center">WhatsApp</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
-                        <tr><td colspan="4" class="p-16 text-center text-slate-300 italic">Buscando archivo...</td></tr>
+                        <tr><td colspan="4" class="p-16 text-center text-slate-300 italic">Buscando archivo en el sistema...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
+
+    <footer class="mt-4 py-8 text-center text-slate-400 text-[9px] font-black uppercase tracking-widest">
+        <p class="text-rose-500 italic">Desarrollado por VIBRAS POSITIVAS - derechos de autor</p>
+        <p class="mt-2 text-slate-600">DISTRILECO desde 1984 apoyando tu tienda</p>
+    </footer>
 
     <script>
         let rawData = [];
@@ -117,16 +122,20 @@
         };
 
         function cargarExcelAutomatico() {
+            // Intenta cargar el archivo directamente desde el repo de GitHub
             fetch("cartera2.xlsx")
-                .then(res => res.arrayBuffer())
+                .then(res => {
+                    if (!res.ok) throw new Error();
+                    return res.arrayBuffer();
+                })
                 .then(ab => {
                     const data = new Uint8Array(ab);
                     const wb = XLSX.read(data, { type: 'array', cellDates: true });
                     rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                     renderApp();
                 })
-                .catch(err => {
-                    document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="p-10 text-center text-amber-600 font-bold italic">CARGUE EL ARCHIVO MANUALMENTE</td></tr>';
+                .catch(() => {
+                    document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="p-10 text-center text-amber-600 font-bold italic uppercase">Cargue el archivo manualmente arriba a la izquierda</td></tr>';
                 });
         }
 
@@ -163,7 +172,7 @@
             let t = { gC:0, gT:0, bC:0, bT:0, mC:0, mT:0, aC:0, aT:0 };
 
             rawData.forEach((row) => {
-                // COMPARACIÓN ROBUSTA: Convierte ambos a número para evitar fallos por ceros a la izquierda
+                // Filtro Robusto: Comparamos como números para evitar fallos por ceros (2 vs 02)
                 const codV = row.vended ? parseInt(row.vended, 10) : -1;
                 const codSel = vSel === "ALL" ? "ALL" : parseInt(vSel, 10);
                 
@@ -185,7 +194,7 @@
                         <tr class="hover:bg-slate-50 border-l-4 border-rose-600 transition-colors">
                             <td class="p-4 font-bold text-slate-800 uppercase text-[9px] leading-tight">${row.razon_social}</td>
                             <td class="p-4 font-black text-emerald-800">$${val.toLocaleString()}</td>
-                            <td class="p-4 text-center"><span class="bg-rose-600 text-white px-3 py-1 rounded-full font-black italic underline">${d}d</span></td>
+                            <td class="p-4 text-center"><span class="bg-rose-600 text-white px-2 py-0.5 rounded-full font-black italic underline">${d}d</span></td>
                             <td class="p-4 text-center"><button onclick="enviarWA('${row.telefonos}', '${row.razon_social}', '${row.numero}', '${val}')" class="btn-wa p-2 rounded-xl text-lg shadow-sm">📱</button></td>
                         </tr>`;
                 }
@@ -200,6 +209,10 @@
             document.getElementById('res-alto-count').innerText = `${t.aC} Fac.`;
             document.getElementById('res-alto-monto').innerText = `$${t.aT.toLocaleString()}`;
             document.getElementById('btnReporte').style.display = t.aC > 0 ? 'flex' : 'none';
+
+            if (t.gC === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-slate-400 italic font-bold uppercase">No hay datos para este asesor</td></tr>';
+            }
         }
 
         function enviarWA(tel, cli, fac, val) {
