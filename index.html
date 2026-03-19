@@ -4,13 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Cartera - Distrileco</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         body { background-color: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; }
         .header-distrileco { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
         .card-total { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
         .btn-wa { background-color: #25D366; color: white; transition: 0.2s; font-weight: 900; }
+        .btn-wa:hover { background-color: #128C7E; transform: scale(1.1); }
         .btn-reporte { position: fixed; bottom: 25px; right: 25px; z-index: 50; background-color: #059669; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 2px solid white; }
     </style>
 </head>
@@ -104,6 +111,13 @@
     </main>
 
     <script>
+        // REGISTRO DEL SERVICE WORKER PARA PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err));
+            });
+        }
+
         const agendaVendedores = {
             "01": { nombre: "HAROLD MARIN", cel: "573117700431" },
             "02": { nombre: "DANNY TRONCOSO", cel: "573137671011" },
@@ -149,7 +163,6 @@
         function procesarExcelData(buffer) {
             try {
                 const data = new Uint8Array(buffer);
-                // cellDates: true es clave para leer fechas correctamente
                 const wb = XLSX.read(data, { type: 'array', cellDates: true });
                 const hoja = wb.Sheets[wb.SheetNames[0]];
                 rawData = XLSX.utils.sheet_to_json(hoja, { defval: "" });
@@ -189,11 +202,10 @@
             const vSel = document.getElementById('selectVendedor').value;
             const tbody = document.getElementById('tableBody');
             const hoy = new Date();
-            hoy.setHours(0,0,0,0); // Normalizar hoy
+            hoy.setHours(0,0,0,0);
             
             tbody.innerHTML = '';
             criticosFiltrados = [];
-
             let t = { gC:0, gT:0, bC:0, bT:0, mC:0, mT:0, aC:0, aT:0 };
 
             rawData.forEach((row) => {
@@ -204,7 +216,6 @@
                 const fechaRaw = row.fecha || row.FECHA;
                 let fFact = new Date(fechaRaw);
                 
-                // Limpieza de fechas inválidas o muy antiguas
                 if (isNaN(fFact.getTime()) || fFact.getFullYear() < 2010) return;
                 fFact.setHours(0,0,0,0);
                 
@@ -243,11 +254,14 @@
         }
 
         function enviarWA(tel, cli, fac, val, venc) {
-            // Lógica para manejar teléfonos múltiples separados por guion o coma
-            let primerTel = tel.toString().split('-')[0].split(',')[0].split(' ')[0];
+            // CORRECCIÓN PARA TELÉFONOS CON GUIONES Y ESPACIOS
+            if(!tel) { alert("Cliente sin teléfono registrado"); return; }
+            
+            // Tomamos el primer número antes del guion o coma y quitamos espacios
+            let primerTel = tel.toString().split('-')[0].split(',')[0].trim();
             let t = primerTel.replace(/\D/g, '');
             
-            if (t.length < 10) {
+            if (t.length < 7) {
                 alert("Número de teléfono no válido: " + primerTel);
                 return;
             }
