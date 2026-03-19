@@ -7,58 +7,49 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root {
-            --distrileco-green: #2d6a4f;
-            --distrileco-gold: #d4af37;
-        }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-bg { background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); }
-        .btn-whatsapp { background-color: #25D366; color: white; transition: 0.3s; }
-        .btn-whatsapp:hover { background-color: #128C7E; transform: scale(1.05); }
+        body { background-color: #f0f2f5; font-family: sans-serif; }
+        .header-distrileco { background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); }
+        .btn-wa { background-color: #25D366; color: white; transition: 0.3s; font-weight: bold; }
+        .btn-wa:hover { background-color: #128C7E; transform: scale(1.05); }
     </style>
 </head>
 <body class="p-4">
 
-    <header class="header-bg text-white p-6 rounded-xl shadow-lg mb-8 text-center relative overflow-hidden">
-        <div class="relative z-10">
-            <h1 class="text-3xl font-bold tracking-wider">DISTRILECO CAUCASIA SAS</h1>
-            <p class="text-xl opacity-90 mt-1">DANNY TRONCOSO - ASESOR PARA LA ZONA</p>
-            <div class="mt-4 flex justify-center gap-4">
-                <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold italic">SUPERARROZ</span>
-                <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold italic">VISTAHERMOSA</span>
-            </div>
-        </div>
-        <div class="absolute -right-10 -bottom-10 opacity-10">
-            <svg width="200" height="200" fill="white" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+    <header class="header-distrileco text-white p-8 rounded-2xl shadow-2xl mb-8 text-center relative">
+        <h1 class="text-4xl font-black tracking-tighter">DISTRILECO CAUCASIA SAS</h1>
+        <p class="text-xl opacity-90 mt-2 font-medium">DANNY TRONCOSO - ASESOR PARA LA ZONA</p>
+        <div class="mt-4 flex justify-center gap-3">
+            <span class="bg-yellow-500 text-black px-4 py-1 rounded-full text-xs font-bold uppercase">Superarroz</span>
+            <span class="bg-white text-green-800 px-4 py-1 rounded-full text-xs font-bold uppercase">Vistahermosa</span>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto">
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6 flex flex-col items-center border-t-4 border-yellow-500">
-            <p class="mb-4 text-gray-600 text-center font-medium">Carga el archivo <strong>cartera2.xlsx</strong> para procesar los cobros</p>
-            <input type="file" id="uploadExcel" accept=".xlsx" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
+    <main class="max-w-7xl mx-auto">
+        <div class="bg-white p-8 rounded-xl shadow-lg mb-8 border-b-8 border-yellow-500 flex flex-col items-center">
+            <label class="text-gray-700 font-bold mb-4">SELECCIONE ARCHIVO CARTERA2.XLSX</label>
+            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="block w-full max-w-md text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 cursor-pointer shadow-inner">
         </div>
 
-        <div class="bg-white rounded-lg shadow-xl overflow-hidden">
-            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                <h2 class="font-bold text-gray-700">LISTADO DE COBROS (>37 DÍAS NEGOCIADOS)</h2>
-                <span id="counter" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">0 Clientes detectados</span>
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b bg-gray-50 flex justify-between items-center">
+                <h2 class="font-black text-gray-800 text-lg uppercase">Cobros con más de 37 días de antigüedad</h2>
+                <span id="counter" class="bg-green-600 text-white text-sm font-bold px-4 py-1 rounded-full">Esperando archivo...</span>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-800 text-white uppercase text-xs">
                         <tr>
-                            <th class="p-4 border-b">Razón Social (B)</th>
-                            <th class="p-4 border-b">Factura (D)</th>
-                            <th class="p-4 border-b">Valor (E)</th>
-                            <th class="p-4 border-b text-center">Días Negocio</th>
-                            <th class="p-4 border-b">Vencimiento (G)</th>
-                            <th class="p-4 border-b text-center">Notificar</th>
+                            <th class="p-5">Cliente</th>
+                            <th class="p-5">N° Factura</th>
+                            <th class="p-5">Valor Total</th>
+                            <th class="p-5 text-center">Días Transcurridos</th>
+                            <th class="p-5">Fecha Emisión</th>
+                            <th class="p-5 text-center">Acción</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-gray-200">
+                    <tbody id="tableBody" class="divide-y divide-gray-200 bg-white">
                         <tr>
-                            <td colspan="6" class="p-10 text-center text-gray-400">Sube el archivo Excel para empezar...</td>
+                            <td colspan="6" class="p-20 text-center text-gray-400 font-medium">Por favor cargue el archivo de Excel para procesar los datos.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -66,9 +57,9 @@
         </div>
     </main>
 
-    <footer class="mt-12 py-6 text-center text-gray-500 text-sm border-t">
-        <p class="font-bold">DISTRILECO desde 1984 apoyando tu tienda</p>
-        <p>App desarrollada por <span class="text-pink-600">VIBRAS POSITIVAS</span> - Derechos de Autor © 2026</p>
+    <footer class="mt-16 py-8 text-center text-gray-500 border-t">
+        <p class="font-bold text-lg text-gray-700">DISTRILECO desde 1984 apoyando tu tienda</p>
+        <p class="text-sm mt-2">Desarrollado por <span class="text-pink-600 font-black">VIBRAS POSITIVAS</span> © 2026</p>
     </footer>
 
     <script>
@@ -78,11 +69,13 @@
 
             reader.onload = function(event) {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                // Forzamos cellDates: true para que entienda las fechas de tu Excel
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: false, cellText: false });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 
-                // Convertimos a JSON omitiendo la primera fila de encabezados
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: "A" });
+                // Convertimos usando los nombres de las columnas de tu imagen
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                console.log("Datos cargados:", jsonData); // Para revisar en consola
                 processData(jsonData);
             };
             reader.readAsArrayBuffer(file);
@@ -91,42 +84,49 @@
         function processData(rows) {
             const tbody = document.getElementById('tableBody');
             const counter = document.getElementById('counter');
+            const hoy = new Date();
             tbody.innerHTML = '';
             let count = 0;
 
-            // Empezamos desde el índice 1 para saltar el encabezado
-            rows.slice(1).forEach((row) => {
-                const razonSocial = row.B || 'N/A';
-                const facturaNum = row.D || 'N/A';
-                const valorTotal = row.E || 0;
-                const fechaFactura = new Date(row.F);
-                const fechaVencimiento = new Date(row.G);
-                const telefono = row.H || '';
-                const vendedor = row.I;
+            rows.forEach((row) => {
+                // Mapeo exacto según tu captura de Excel
+                const razonSocial = row.razon_social || 'N/A';
+                const facturaNum = row.numero || 'N/A';
+                const valorTotal = row.ttotal || 0;
+                const vendedor = row.vended;
+                const telefono = row.telefonos || '';
+                
+                // Convertir la fecha de la columna 'fecha'
+                let fechaFactura = new Date(row.fecha);
 
-                // 1. Filtrar Vendedor 12
-                if (vendedor == 12) return;
+                // 1. Omitir vendedor 02 (Si es el que quieres sacar, antes dijiste 12, ajusta aquí si es necesario)
+                if (vendedor == "02") return; 
 
-                // 2. Calcular días de negociación
-                const diffTime = Math.abs(fechaVencimiento - fechaFactura);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                // Validar que la fecha sea correcta
+                if (isNaN(fechaFactura.getTime())) return;
 
-                // 3. Filtro de los 37 días
+                // 2. Calcular días de edad (Hoy - Fecha Factura)
+                const diffTime = hoy - fechaFactura;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                // 3. Filtro de más de 37 días
                 if (diffDays > 37) {
                     count++;
                     const rowHtml = `
-                        <tr class="hover:bg-yellow-50 transition">
-                            <td class="p-4 font-bold text-gray-800">${razonSocial}</td>
-                            <td class="p-4 text-gray-600">#${facturaNum}</td>
-                            <td class="p-4 font-mono text-green-700">$${valorTotal.toLocaleString()}</td>
-                            <td class="p-4 text-center">
-                                <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">${diffDays} días</span>
+                        <tr class="hover:bg-yellow-50 transition border-l-8 ${diffDays > 50 ? 'border-red-600' : 'border-orange-400'}">
+                            <td class="p-5 font-bold text-gray-900">${razonSocial}</td>
+                            <td class="p-5 text-gray-600 font-mono font-bold">${facturaNum}</td>
+                            <td class="p-5 text-green-700 font-black">$${Number(valorTotal).toLocaleString()}</td>
+                            <td class="p-5 text-center">
+                                <span class="bg-red-100 text-red-700 px-4 py-1 rounded-full text-xs font-black uppercase">
+                                    ${diffDays} Días
+                                </span>
                             </td>
-                            <td class="p-4 text-gray-500 text-sm">${fechaVencimiento.toLocaleDateString()}</td>
-                            <td class="p-4 text-center">
+                            <td class="p-5 text-gray-500 text-sm italic">${fechaFactura.toLocaleDateString()}</td>
+                            <td class="p-5 text-center">
                                 <button onclick="sendWhatsApp('${telefono}', '${razonSocial}', '${facturaNum}', '${valorTotal}')" 
-                                        class="btn-whatsapp px-4 py-2 rounded-lg text-sm font-bold shadow-md">
-                                    ENVIAR (SI)
+                                        class="btn-wa px-6 py-2 rounded-full text-xs uppercase shadow-lg">
+                                    Notificar (SI)
                                 </button>
                             </td>
                         </tr>
@@ -135,16 +135,17 @@
                 }
             });
 
-            counter.innerText = `${count} Clientes detectados`;
+            counter.innerText = `${count} Facturas en mora encontradas`;
             if (count === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-10 text-center">No se encontraron facturas con más de 37 días (o son del Vendedor 12).</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="p-20 text-center text-gray-500 italic">No se encontraron facturas > 37 días para los criterios aplicados.</td></tr>';
             }
         }
 
         function sendWhatsApp(tel, cliente, factura, total) {
-            // Limpiar teléfono por si tiene espacios o guiones
-            const cleanTel = tel.toString().replace(/\D/g, '');
-            const mensaje = `Hola *${cliente}*, te saludamos de *DISTRILECO*. Te recordamos que tu factura #${factura} por un valor de *$${total}* se encuentra pendiente de pago. ¡Gracias por tu confianza en Superarroz y Vistahermosa!`;
+            let cleanTel = tel.toString().replace(/\D/g, '');
+            if (cleanTel.length === 10) cleanTel = '57' + cleanTel;
+            
+            const mensaje = `Hola *${cliente}*, te saludamos de *DISTRILECO*. Te recordamos que tu factura *${factura}* por un valor de *$${Number(total).toLocaleString()}* tiene más de 37 días de emisión. Agradecemos tu gestión de pago. ¡Feliz día!`;
             
             const url = `https://wa.me/${cleanTel}?text=${encodeURIComponent(mensaje)}`;
             window.open(url, '_blank');
