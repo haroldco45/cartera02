@@ -1,0 +1,17 @@
+{
+  "name": "Cartera Distrileco",
+  "short_name": "Cartera",
+  "description": "Gestión de Cartera Crítica - Distrileco Caucasia SAS",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5555/5555232.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
