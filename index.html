@@ -60,8 +60,10 @@
 
     <main class="max-w-6xl mx-auto mb-24">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 text-center">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border-2 border-dashed border-slate-200">
-                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="text-[10px] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700 font-bold">
+            <div class="bg-white p-5 rounded-3xl shadow-sm border-2 border-dashed border-slate-200 flex flex-col justify-center items-center gap-2">
+                <p class="text-[10px] font-black uppercase text-slate-400">Cargar Excel</p>
+                <input type="file" id="uploadExcel" accept=".xlsx,.xls" class="text-[10px] file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700 font-bold cursor-pointer">
+                <p id="estadoArchivo" class="text-[9px] text-slate-400 italic"></p>
             </div>
             <div class="md:col-span-3 card-total p-6 rounded-3xl shadow-xl text-white border-r-8 border-emerald-500">
                 <p class="text-emerald-400 text-[10px] font-black uppercase italic tracking-widest leading-none mb-2">Cartera en Gestión</p>
@@ -88,6 +90,13 @@
             </div>
         </div>
 
+        <!-- Alerta de diagnóstico -->
+        <div id="alertaDiagnostico" class="hidden mb-6 bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 text-sm text-amber-800">
+            <p class="font-black uppercase text-amber-600 mb-1">⚠️ Problema con el archivo</p>
+            <p id="msgDiagnostico"></p>
+            <p class="mt-2 text-xs">El archivo debe tener columnas: <strong>vended/vendedor, razon_social, numero, fecha, vencimiento, ttotal/valor, telefonos</strong></p>
+        </div>
+
         <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
             <div class="bg-slate-900 p-4 text-white text-center font-black text-[10px] uppercase">Facturas +37 Días</div>
             <div class="overflow-x-auto">
@@ -111,10 +120,9 @@
     </main>
 
     <script>
-        // REGISTRO DEL SERVICE WORKER PARA PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err));
+                navigator.serviceWorker.register('sw.js').catch(() => {});
             });
         }
 
@@ -148,28 +156,126 @@
 
         function cargarExcelAutomatico() {
             fetch("cartera2.xlsx")
-                .then(res => { if(!res.ok) throw new Error(); return res.arrayBuffer(); })
-                .then(ab => { procesarExcelData(ab); })
+                .then(res => { if (!res.ok) throw new Error(); return res.arrayBuffer(); })
+                .then(ab => procesarExcelData(ab, "cartera2.xlsx"))
                 .catch(() => console.log("Esperando carga manual"));
         }
 
         document.getElementById('uploadExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('estadoArchivo').textContent = "Cargando...";
             const reader = new FileReader();
-            reader.onload = (event) => procesarExcelData(event.target.result);
+            reader.onload = (event) => procesarExcelData(event.target.result, file.name);
+            reader.onerror = () => mostrarAlerta("No se pudo leer el archivo.");
             reader.readAsArrayBuffer(file);
         });
 
-        function procesarExcelData(buffer) {
+        // Convierte fecha serial de Excel a Date
+        function excelSerialToDate(serial) {
+            if (!serial || isNaN(serial)) return null;
+            // Excel serial date (días desde 1900-01-01, con bug del año bisiesto 1900)
+            const msPerDay = 86400000;
+            const excelEpoch = new Date(1899, 11, 30);
+            return new Date(excelEpoch.getTime() + serial * msPerDay);
+        }
+
+        // Parsea fecha sea Date, string o número serial
+        function parsearFecha(val) {
+            if (!val) return null;
+            if (val instanceof Date) {
+                return isNaN(val.getTime()) ? null : val;
+            }
+            if (typeof val === 'number') {
+                return excelSerialToDate(val);
+            }
+            if (typeof val === 'string') {
+                // Intenta varios formatos
+                let d = new Date(val);
+                if (!isNaN(d.getTime())) return d;
+                // Formato DD/MM/YYYY
+                const partes = val.split(/[\/\-\.]/);
+                if (partes.length === 3) {
+                    const [a, b, c] = partes;
+                    // Detecta si es DD/MM/YYYY o YYYY/MM/DD
+                    if (a.length === 4) {
+                        d = new Date(`${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}`);
+                    } else {
+                        d = new Date(`${c}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`);
+                    }
+                    if (!isNaN(d.getTime())) return d;
+                }
+            }
+            return null;
+        }
+
+        function formatearFecha(val) {
+            const d = parsearFecha(val);
+            if (!d) return String(val || '');
+            return d.toLocaleDateString('es-CO');
+        }
+
+        // Normaliza nombres de columnas: quita espacios, pasa a minúsculas
+        function normalizarCol(str) {
+            return String(str || '').trim().toLowerCase().replace(/\s+/g, '_');
+        }
+
+        function procesarExcelData(buffer, nombreArchivo) {
             try {
                 const data = new Uint8Array(buffer);
-                const wb = XLSX.read(data, { type: 'array', cellDates: true });
+                const wb = XLSX.read(data, { type: 'array', cellDates: false });
                 const hoja = wb.Sheets[wb.SheetNames[0]];
-                rawData = XLSX.utils.sheet_to_json(hoja, { defval: "" });
+
+                // Leer como JSON usando la primera fila como encabezado
+                let filas = XLSX.utils.sheet_to_json(hoja, { defval: "", raw: true });
+
+                if (filas.length === 0) {
+                    mostrarAlerta(`El archivo "${nombreArchivo}" está vacío o no se pudo leer.`);
+                    return;
+                }
+
+                // Normalizar claves
+                filas = filas.map(row => {
+                    const norm = {};
+                    Object.keys(row).forEach(k => { norm[normalizarCol(k)] = row[k]; });
+                    return norm;
+                });
+
+                // Verificar que tenga columnas esperadas
+                const primeraFila = filas[0];
+                const colsDisponibles = Object.keys(primeraFila).join(', ');
+                const tieneVendedor = 'vended' in primeraFila || 'vendedor' in primeraFila || 'vend' in primeraFila;
+                const tieneRazon = 'razon_social' in primeraFila || 'razon' in primeraFila || 'cliente' in primeraFila || 'nombre' in primeraFila;
+                const tieneFecha = 'fecha' in primeraFila;
+                const tieneTotal = 'ttotal' in primeraFila || 'valor' in primeraFila || 'saldo' in primeraFila || 'total' in primeraFila;
+
+                if (!tieneVendedor || !tieneRazon || !tieneFecha || !tieneTotal) {
+                    mostrarAlerta(
+                        `El archivo "${nombreArchivo}" no tiene el formato de facturas esperado.<br>` +
+                        `<strong>Columnas encontradas:</strong> ${colsDisponibles}<br>` +
+                        `<strong>Columnas requeridas:</strong> vendedor/vended, razon_social, fecha, ttotal/valor, numero, vencimiento, telefonos`
+                    );
+                    return;
+                }
+
+                ocultarAlerta();
+                rawData = filas;
+                document.getElementById('estadoArchivo').textContent = `✅ ${nombreArchivo} (${filas.length} filas)`;
                 renderApp();
             } catch (e) {
-                alert("Error leyendo el Excel.");
+                console.error(e);
+                mostrarAlerta("Error leyendo el archivo Excel. Verifique que no esté dañado.");
             }
+        }
+
+        function mostrarAlerta(msg) {
+            document.getElementById('alertaDiagnostico').classList.remove('hidden');
+            document.getElementById('msgDiagnostico').innerHTML = msg;
+            document.getElementById('estadoArchivo').textContent = "❌ Error al cargar";
+        }
+
+        function ocultarAlerta() {
+            document.getElementById('alertaDiagnostico').classList.add('hidden');
         }
 
         document.getElementById('selectVendedor').addEventListener('change', function() {
@@ -194,7 +300,14 @@
         function actualizarNombreCabecera() {
             const sel = document.getElementById('selectVendedor');
             const nombre = sel.options[sel.selectedIndex].text;
-            document.getElementById('nombreAsesorActual').innerText = (nombre.includes("--")) ? "No identificado" : nombre;
+            document.getElementById('nombreAsesorActual').innerText = nombre.includes("--") ? "No identificado" : nombre;
+        }
+
+        function obtenerCampo(row, ...candidatos) {
+            for (const c of candidatos) {
+                if (c in row && row[c] !== "" && row[c] !== null && row[c] !== undefined) return row[c];
+            }
+            return "";
         }
 
         function renderApp() {
@@ -202,72 +315,105 @@
             const vSel = document.getElementById('selectVendedor').value;
             const tbody = document.getElementById('tableBody');
             const hoy = new Date();
-            hoy.setHours(0,0,0,0);
-            
+            hoy.setHours(0, 0, 0, 0);
+
             tbody.innerHTML = '';
             criticosFiltrados = [];
-            let t = { gC:0, gT:0, bC:0, bT:0, mC:0, mT:0, aC:0, aT:0 };
+            let t = { gC: 0, gT: 0, bC: 0, bT: 0, mC: 0, mT: 0, aC: 0, aT: 0 };
+            let filasValidas = 0;
 
             rawData.forEach((row) => {
-                const codV = (row.vended || row.vendedor || "").toString().padStart(2, '0');
+                const codVRaw = obtenerCampo(row, 'vended', 'vendedor', 'vend', 'cod_vendedor', 'codigovendedor');
+                const codV = String(codVRaw).trim().replace(/\D/g, '').padStart(2, '0');
+
                 if (vSel !== "ALL" && parseInt(codV) !== parseInt(vSel)) return;
 
-                const val = parseFloat(row.ttotal || row.valor || 0);
-                const fechaRaw = row.fecha || row.FECHA;
-                let fFact = new Date(fechaRaw);
-                
-                if (isNaN(fFact.getTime()) || fFact.getFullYear() < 2010) return;
-                fFact.setHours(0,0,0,0);
-                
+                const val = parseFloat(obtenerCampo(row, 'ttotal', 'valor', 'saldo', 'total', 'monto') || 0);
+                if (isNaN(val) || val <= 0) return;
+
+                const fechaRaw = obtenerCampo(row, 'fecha', 'fecha_factura', 'fecha_doc');
+                const fFact = parsearFecha(fechaRaw);
+                if (!fFact || fFact.getFullYear() < 2010) return;
+
+                fFact.setHours(0, 0, 0, 0);
                 const d = Math.floor((hoy - fFact) / (1000 * 60 * 60 * 24));
-                const fVencRaw = row.vencimiento || row.VENCIMIENTO;
-                const fVenc = (fVencRaw instanceof Date) ? fVencRaw.toLocaleDateString() : String(fVencRaw);
+                if (d < 0) return; // fecha futura, ignorar
+
+                filasValidas++;
+                const vencRaw = obtenerCampo(row, 'vencimiento', 'fecha_vencimiento', 'vence', 'fecha_vence');
+                const fVencStr = formatearFecha(vencRaw);
+
+                const razon = obtenerCampo(row, 'razon_social', 'razon', 'cliente', 'nombre', 'nombrecli');
+                const numero = obtenerCampo(row, 'numero', 'factura', 'nro_factura', 'nro', 'doc');
+                const telefonos = obtenerCampo(row, 'telefonos', 'telefono', 'celular', 'tel', 'movil');
 
                 t.gC++; t.gT += val;
-                if (d <= 30) { t.bC++; t.bT += val; }
-                else if (d <= 37) { t.mC++; t.mT += val; }
-                else {
+
+                if (d <= 30) {
+                    t.bC++; t.bT += val;
+                } else if (d <= 37) {
+                    t.mC++; t.mT += val;
+                } else {
                     t.aC++; t.aT += val;
-                    criticosFiltrados.push({ cli: row.razon_social, val: val, d: d, fac: row.numero, tel: row.telefonos, venc: fVenc });
+                    criticosFiltrados.push({ cli: razon, val, d, fac: numero, tel: telefonos, venc: fVencStr });
+
+                    const telSafe = String(telefonos || '').replace(/'/g, '');
+                    const razonSafe = String(razon || '').replace(/'/g, '').replace(/"/g, '');
+                    const numSafe = String(numero || '').replace(/'/g, '');
+                    const vencSafe = fVencStr.replace(/'/g, '');
+
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 border-l-4 border-rose-600">
-                            <td class="p-4 font-bold text-slate-800 uppercase leading-tight">${row.razon_social}</td>
-                            <td class="p-4 font-mono text-slate-500">#${row.numero}</td>
-                            <td class="p-4 text-slate-400">${fVenc}</td>
-                            <td class="p-4 font-black text-emerald-800">$${val.toLocaleString()}</td>
+                            <td class="p-4 font-bold text-slate-800 uppercase leading-tight">${razon}</td>
+                            <td class="p-4 font-mono text-slate-500">#${numero}</td>
+                            <td class="p-4 text-slate-400">${fVencStr}</td>
+                            <td class="p-4 font-black text-emerald-800">$${val.toLocaleString('es-CO')}</td>
                             <td class="p-4 text-center"><span class="bg-rose-600 text-white px-2 py-0.5 rounded-full font-black italic underline">${d}d</span></td>
-                            <td class="p-4 text-center"><button onclick="enviarWA('${row.telefonos}', '${row.razon_social}', '${row.numero}', '${val}', '${fVenc}')" class="btn-wa p-2 rounded-xl text-lg shadow-sm">📱</button></td>
+                            <td class="p-4 text-center"><button onclick="enviarWA('${telSafe}', '${razonSafe}', '${numSafe}', '${val}', '${vencSafe}')" class="btn-wa p-2 rounded-xl text-lg shadow-sm">📱</button></td>
                         </tr>`;
                 }
             });
 
-            document.getElementById('total-general-monto').innerText = `$${t.gT.toLocaleString()}`;
+            if (filasValidas === 0 && rawData.length > 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-amber-600 font-bold">
+                    No se encontraron facturas válidas para el asesor seleccionado.<br>
+                    <span class="text-xs font-normal text-slate-400">Verifique que el código de vendedor coincida con los del archivo.</span>
+                </td></tr>`;
+            } else if (t.aC === 0 && filasValidas > 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-emerald-600 font-bold">✅ Sin facturas críticas (+37 días)</td></tr>`;
+            }
+
+            document.getElementById('total-general-monto').innerText = `$${t.gT.toLocaleString('es-CO')}`;
             document.getElementById('total-general-count').innerText = `${t.gC} Fac.`;
             document.getElementById('res-bajo-count').innerText = `${t.bC} Fac.`;
-            document.getElementById('res-bajo-monto').innerText = `$${t.bT.toLocaleString()}`;
+            document.getElementById('res-bajo-monto').innerText = `$${t.bT.toLocaleString('es-CO')}`;
             document.getElementById('res-medio-count').innerText = `${t.mC} Fac.`;
-            document.getElementById('res-medio-monto').innerText = `$${t.mT.toLocaleString()}`;
+            document.getElementById('res-medio-monto').innerText = `$${t.mT.toLocaleString('es-CO')}`;
             document.getElementById('res-alto-count').innerText = `${t.aC} Fac.`;
-            document.getElementById('res-alto-monto').innerText = `$${t.aT.toLocaleString()}`;
-            
+            document.getElementById('res-alto-monto').innerText = `$${t.aT.toLocaleString('es-CO')}`;
+
             document.getElementById('btnReporte').style.display = (t.aC > 0 && vSel !== "ALL") ? 'flex' : 'none';
         }
 
         function enviarWA(tel, cli, fac, val, venc) {
-            // CORRECCIÓN PARA TELÉFONOS CON GUIONES Y ESPACIOS
-            if(!tel) { alert("Cliente sin teléfono registrado"); return; }
-            
-            // Tomamos el primer número antes del guion o coma y quitamos espacios
-            let primerTel = tel.toString().split('-')[0].split(',')[0].trim();
+            if (!tel || String(tel).trim() === '') {
+                alert("Cliente sin teléfono registrado");
+                return;
+            }
+            // Toma el primer número antes de guion, coma, barra o espacio
+            let primerTel = String(tel).split(/[-,\/;]/)[0].trim();
             let t = primerTel.replace(/\D/g, '');
-            
+
             if (t.length < 7) {
                 alert("Número de teléfono no válido: " + primerTel);
                 return;
             }
+            // Si es 10 dígitos (Colombia móvil sin prefijo), agregar 57
             if (t.length === 10) t = '57' + t;
-            
-            const m = `Hola *${cli}*, de *DISTRILECO*. Te recordamos el pago de la Factura *#${fac}* por *$${Number(val).toLocaleString()}* que venció el *${venc}*. Agradecemos tu gestión inmediata.`;
+            // Si es 7 dígitos (fijo), agregar 576 (indicativo Córdoba/Antioquia)
+            if (t.length === 7) t = '576' + t;
+
+            const m = `Hola *${cli}*, de *DISTRILECO*. Te recordamos el pago de la Factura *#${fac}* por *$${Number(val).toLocaleString('es-CO')}* que venció el *${venc}*. Agradecemos tu gestión inmediata.`;
             window.open(`https://wa.me/${t}?text=${encodeURIComponent(m)}`, '_blank');
         }
 
@@ -275,10 +421,10 @@
             const vSel = document.getElementById('selectVendedor').value;
             const asesor = agendaVendedores[vSel];
             if (!asesor) return;
-            
+
             let m = `⚠️ *INFORME CARTERA CRÍTICA*\n🤝 *Asesor:* ${asesor.nombre}\n--------------------------------\n`;
-            criticosFiltrados.forEach((f, i) => { 
-                m += `${i+1}. *${f.cli}*\n📄 Fact: *#${f.fac}* | 📅 Vence: *${f.venc}*\n💰 *$${f.val.toLocaleString()}* | 🔥 *${f.d} días*\n\n`; 
+            criticosFiltrados.forEach((f, i) => {
+                m += `${i + 1}. *${f.cli}*\n📄 Fact: *#${f.fac}* | 📅 Vence: *${f.venc}*\n💰 *$${f.val.toLocaleString('es-CO')}* | 🔥 *${f.d} días*\n\n`;
             });
             m += `_Distrileco Caucasia SAS_`;
             window.open(`https://wa.me/${asesor.cel}?text=${encodeURIComponent(m)}`, '_blank');
