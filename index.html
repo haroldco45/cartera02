@@ -220,14 +220,42 @@
             return String(str || '').trim().toLowerCase().replace(/\s+/g, '_');
         }
 
+        // Columnas mínimas que debe tener el archivo de facturas
+        const COLS_REQUERIDAS = ['razon_social', 'fecha', 'numero', 'ttotal', 'vendedor'];
+
+        function encontrarHojaCorrecta(wb) {
+            // Busca la hoja que tenga las columnas de facturas
+            for (const nombre of wb.SheetNames) {
+                const hoja = wb.Sheets[nombre];
+                const filas = XLSX.utils.sheet_to_json(hoja, { defval: "", raw: true, header: 0 });
+                if (filas.length === 0) continue;
+                const cols = Object.keys(filas[0]).map(k => k.toString().trim().toLowerCase());
+                const tieneColumnas = COLS_REQUERIDAS.every(c => cols.some(col => col.includes(c.replace('_', ''))||col === c));
+                if (tieneColumnas) return { nombre, hoja, filas };
+            }
+            return null;
+        }
+
         function procesarExcelData(buffer, nombreArchivo) {
             try {
                 const data = new Uint8Array(buffer);
                 const wb = XLSX.read(data, { type: 'array', cellDates: false });
-                const hoja = wb.Sheets[wb.SheetNames[0]];
 
-                // Leer como JSON usando la primera fila como encabezado
-                let filas = XLSX.utils.sheet_to_json(hoja, { defval: "", raw: true });
+                // Buscar hoja correcta automáticamente
+                const resultado = encontrarHojaCorrecta(wb);
+                if (!resultado) {
+                    // Mostrar diagnóstico con todas las hojas disponibles
+                    const hojasInfo = wb.SheetNames.map(n => {
+                        const h = wb.Sheets[n];
+                        const f = XLSX.utils.sheet_to_json(h, { defval: "", raw: true });
+                        return `<strong>${n}</strong> (${f.length} filas, cols: ${f.length > 0 ? Object.keys(f[0]).join(', ') : 'vacía'})`;
+                    }).join('<br>');
+                    mostrarAlerta(`No se encontró hoja con datos de facturas en "${nombreArchivo}".<br><br>Hojas disponibles:<br>${hojasInfo}`);
+                    return;
+                }
+
+                let filas = resultado.filas;
+                console.log(`✅ Leyendo hoja: "${resultado.nombre}" con ${filas.length} filas`);
 
                 if (filas.length === 0) {
                     mostrarAlerta(`El archivo "${nombreArchivo}" está vacío o no se pudo leer.`);
